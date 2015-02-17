@@ -1,0 +1,7 @@
+name: RevTabS
+author: connection_lost
+main: me.crafter.mc.revtabs.RevTabS
+version: 1.0
+description: >
+             Rev-Craft Tab Plugin.
+commands:
