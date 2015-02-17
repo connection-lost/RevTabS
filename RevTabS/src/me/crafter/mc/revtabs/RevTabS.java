@@ -26,7 +26,6 @@ public class RevTabS extends JavaPlugin {
         	pl.setChat(chat);
         }
         
-        
 		Bukkit.getScheduler().runTaskTimerAsynchronously(this, new Runnable(){
 			public void run(){
 				pl.updateAll();

@@ -18,131 +18,59 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scoreboard.Team;
-import org.mcsg.double0negative.tabapi.TabAPI;
+
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
 public class TabListener implements Listener {
 	
-	private Plugin plugin = Bukkit.getServer().getPluginManager().getPlugin("RevTab");
+	private ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
+	
+	private Plugin plugin = Bukkit.getServer().getPluginManager().getPlugin("RevTabS");
 	private List<String> playerlist = new ArrayList<String>();
 	private Chat chat;
-	private boolean vault;
+
+	private String templateheader = ChatColor.GOLD + "Rev-Craft";
+	private String templatefooter = ChatColor.YELLOW + "@day@" + ChatColor.RESET + " @realname@" + ChatColor.RESET + " Ping: @ping@";
 	
 	public TabListener(Plugin plug){
 		for (Player player : Bukkit.getOnlinePlayers()){
 			playerlist.add(player.getName());
 		}
-		vault = setupChat();
-		if (vault);
-//		{
-//			Bukkit.getScheduler().runTaskLater(Bukkit.getPluginManager().getPlugin("RevTab"), new Runnable(){
-//				public void run(){
-//					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "reloader reload revtab");
-//				}
-//			}, 1200);
-//		}
+		setupChat();
 	}
 
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event){
-		final Player p = event.getPlayer();
-		TabAPI.setPriority(plugin, p, 2);
-		Bukkit.getScheduler().scheduleSyncDelayedTask(Bukkit.getServer().getPluginManager().getPlugin("RevTab"), new Runnable(){
-			public void run(){
-				updateAll();
-			}
-		}, 4);
+		//final Player p = event.getPlayer();
+		//TabAPI.setPriority(plugin, p, 2);
+		scheduleUpdate();
 	}
 	
 	@EventHandler
 	public void onPlayerQuit(PlayerQuitEvent event){
-		Bukkit.getScheduler().scheduleSyncDelayedTask(Bukkit.getServer().getPluginManager().getPlugin("RevTab"), new Runnable(){
-			public void run(){
-				updateAll();
-			}
-		}, 4);
+		scheduleUpdate();
 	}
 	
 	@EventHandler
 	public void onPlayerDeath(PlayerDeathEvent event){
-		Bukkit.getScheduler().scheduleSyncDelayedTask(Bukkit.getServer().getPluginManager().getPlugin("RevTab"), new Runnable(){
-			public void run(){
-				updateAll();
-			}
-		}, 4);
+		scheduleUpdate();
 	}
 	
 	@EventHandler
 	public void onPlayerRespawn(PlayerRespawnEvent event){
-		Bukkit.getScheduler().scheduleSyncDelayedTask(Bukkit.getServer().getPluginManager().getPlugin("RevTab"), new Runnable(){
+		scheduleUpdate();
+	}
+	
+	public void scheduleUpdate(){
+		Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new Runnable(){
 			public void run(){
 				updateAll();
 			}
 		}, 4);
-	}
-	
-	public void updateTab(Player p){
-//		TabAPI.resetTabList(p);
-		TabAPI.setTabString(plugin, p, 0, 0, ChatColor.GREEN + " ===============", 0);
-		TabAPI.setTabString(plugin, p, 0, 1, ChatColor.GOLD + "     Rev-Craft", 0);
-		TabAPI.setTabString(plugin, p, 0, 2, ChatColor.GREEN + "=============== ", 0);
-
-		
-		
-		
-		TabAPI.setTabString(plugin, p, 1, 0, nullFor(2,0), 0);
-		TabAPI.setTabString(plugin, p, 1, 1, nullFor(2,1), 0);
-		TabAPI.setTabString(plugin, p, 1, 2, nullFor(2,2), 0);
-		
-		
-		
-		List<Player> players = get48Players();
-		int x = 2;
-		int y = 0;
-		for (Player player : players){
-			TabAPI.setTabString(plugin, p, x, y, getPlayerName(player), ((CraftPlayer)player).getHandle().ping);
-			y += 1;
-			if (y > 2){
-				y = 0;
-				x += 1;
-			}
-		}
-//		while (x < 18){
-//			TabAPI.setTabString(plugin, p, x, y, ChatColor.GRAY+"(空) "+(x*3-6+y+1)+"/99", 0);
-//			y += 1;
-//			if (y > 2){
-//				y = 0;
-//				x += 1;
-//			}
-//		}
-		
-		while (x < 19){
-			TabAPI.setTabString(plugin, p, x, y, TabAPI.nextNull(), 0);
-			y += 1;
-			if (y > 2){
-				y = 0;
-				x += 1;
-			}
-		}
-		
-		TabAPI.setTabString(plugin, p, 18, 0, getDay(p));
-		TabAPI.setTabString(plugin, p, 18, 1, p.getName(), 5);
-		TabAPI.setTabString(plugin, p, 18, 2, ChatColor.YELLOW+"Ping >> "+ String.valueOf(((CraftPlayer)p).getHandle().ping/2) , ((CraftPlayer)p).getHandle().ping/2);
-		//TabAPI.setTabString(plugin, p, 18, 1, String.valueOf(((CraftPlayer)p).getHandle().by), 5);
-		TabAPI.setTabString(plugin, p, 17, 2, String.valueOf(Bukkit.getOnlinePlayers().size()) + "/99", 0);
-		
-		TabAPI.setTabString(plugin, p, 19, 0, ChatColor.DARK_GREEN + " ===============", 0);
-		TabAPI.setTabString(plugin, p, 19, 1, ChatColor.DARK_AQUA + "     Rev-Craft", 0);
-		TabAPI.setTabString(plugin, p, 19, 2, ChatColor.DARK_GREEN + "=============== ", 0);
-		TabAPI.updatePlayer(p);
-
-	}
-	
-	public String getWeather(Player p){
-		return (ChatColor.YELLOW + String.valueOf(p.getWorld().getTime()/1200) + "分" + String.valueOf(p.getWorld().getTime()/20%60) + "秒").replace("9", "⑨");
-	}
-	
-	public String getDay(Player p){
-		return (ChatColor.YELLOW + String.valueOf(p.getWorld().getFullTime()/24000) + "日").replace("9", "⑨");
 	}
 
 	public void updateAll(){
@@ -150,11 +78,59 @@ public class TabListener implements Listener {
 			updateTab(p);
 		}
 	}
+	
+	public void updateTab(Player p){
+		sendHeaderFooter(p);
+	}
 
+
+	public void sendHeaderFooter(Player p){
+		PacketContainer pc = this.protocolManager.createPacket(PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER);
+	    String[] histab = getHeaderFooter(p);
+	    pc.getChatComponents().write(0, WrappedChatComponent.fromText(histab[0])).write(1, WrappedChatComponent.fromText(histab[1]));
+	    try {
+	    	this.protocolManager.sendServerPacket(p, pc);
+	    } catch (Exception e){}
+	}
 	
+	public String[] getHeaderFooter(Player p){
+		String header = templateheader.replaceAll("@realname@", getPlayerName(p)).replaceAll("@name@", p.getName())
+				.replaceAll("@ping@", getTextPing(p)).replaceAll("@date@", getTime(p)).replaceAll("@realname", getPlayerName(p));
+		String footer = templatefooter.replaceAll("@realname@", getPlayerName(p)).replaceAll("@name@", p.getName())
+				.replaceAll("@ping@", getTextPing(p)).replaceAll("@date@", getTime(p)).replaceAll("@realname", getPlayerName(p));
+		String[] ret = {header,footer};
+		return ret;
+	}
 	
+	public String getTextPing(Player p) {
+		int ping = ((CraftPlayer)p).getHandle().ping/2;
+		if (ping == 0){
+			return ChatColor.DARK_PURPLE + "?";
+		} else if (ping <= 60){
+			return ChatColor.GREEN + "" + ping;
+		} else if (ping <= 120){
+			return ChatColor.DARK_GREEN + "" + ping;
+		} else if (ping <= 250){
+			return ChatColor.YELLOW + "" + ping;
+		} else if (ping <= 400){
+			return ChatColor.GOLD + "" + ping;
+		} else if (ping <= 600){
+			return ChatColor.RED + "" + ping;
+		} else if (ping <= 1000){
+			return ChatColor.DARK_RED + "" + ping;
+		} else {
+			return ChatColor.DARK_PURPLE + "" + ping;
+		}
+		
+	}
+
+	public String getTime(Player p){
+		return (ChatColor.YELLOW + String.valueOf(p.getWorld().getTime()/1200) + "分" + String.valueOf(p.getWorld().getTime()/20%60) + "秒").replace("9", "⑨");
+	}
 	
-	
+	public String getDay(Player p){
+		return (ChatColor.YELLOW + String.valueOf(p.getWorld().getFullTime()/24000) + "日").replace("9", "⑨");
+	}
 	
     private boolean setupChat() {
         if (Bukkit.getServer().getPluginManager().getPlugin("Vault") == null) {
@@ -183,11 +159,11 @@ public class TabListener implements Listener {
     	}
     }
     
-    public List<Player> get48Players(){
-    	List<Player> players = new ArrayList<Player>(Bukkit.getOnlinePlayers());
-    	if (players.size() <= 48) return players;
-    	else return players.subList(0, 47);
-    }
+//    public List<Player> get48Players(){
+//    	List<Player> players = new ArrayList<Player>(Bukkit.getOnlinePlayers());
+//    	if (players.size() <= 48) return players;
+//    	else return players.subList(0, 47);
+//    }
 	
 //    public int getBarPing(){
 //    	int bar = (int) ((Bukkit.getWorld("world").getFullTime()/20%5));
@@ -199,47 +175,47 @@ public class TabListener implements Listener {
 //    }
     
     
-   public String nullFor(int x, int y){
-	   String ret = "";
-	   int loc = 3*x+y;
-	   if (loc < 10){
-		   ret += ChatColor.COLOR_CHAR+"1";
-		   for (int n = 0; n < loc; n++){
-			   ret += " ";
-		   }
-	   } else if (loc < 20){
-		   loc -= 9;
-		   ret += ChatColor.COLOR_CHAR+"2";
-		   for (int n = 0; n < loc; n++){
-			   ret += " ";
-		   }
-	   } else if (loc < 30){
-		   loc -= 19;
-		   ret += ChatColor.COLOR_CHAR+"3";
-		   for (int n = 0; n < loc; n++){
-			   ret += " ";
-		   }
-	   } else if (loc < 40){
-		   loc -= 29;
-		   ret += ChatColor.COLOR_CHAR+"4";
-		   for (int n = 0; n < loc; n++){
-			   ret += " ";
-		   }
-	   } else if (loc < 50){
-		   loc -= 39;
-		   ret += ChatColor.COLOR_CHAR+"5";
-		   for (int n = 0; n < loc; n++){
-			   ret += " ";
-		   }
-	   } else if (loc < 60){
-		   loc -= 49;
-		   ret += ChatColor.COLOR_CHAR+"6";
-		   for (int n = 0; n < loc; n++){
-			   ret += " ";
-		   }
-	   }
-	   return ret;
-   }
+//   public String nullFor(int x, int y){
+//	   String ret = "";
+//	   int loc = 3*x+y;
+//	   if (loc < 10){
+//		   ret += ChatColor.COLOR_CHAR+"1";
+//		   for (int n = 0; n < loc; n++){
+//			   ret += " ";
+//		   }
+//	   } else if (loc < 20){
+//		   loc -= 9;
+//		   ret += ChatColor.COLOR_CHAR+"2";
+//		   for (int n = 0; n < loc; n++){
+//			   ret += " ";
+//		   }
+//	   } else if (loc < 30){
+//		   loc -= 19;
+//		   ret += ChatColor.COLOR_CHAR+"3";
+//		   for (int n = 0; n < loc; n++){
+//			   ret += " ";
+//		   }
+//	   } else if (loc < 40){
+//		   loc -= 29;
+//		   ret += ChatColor.COLOR_CHAR+"4";
+//		   for (int n = 0; n < loc; n++){
+//			   ret += " ";
+//		   }
+//	   } else if (loc < 50){
+//		   loc -= 39;
+//		   ret += ChatColor.COLOR_CHAR+"5";
+//		   for (int n = 0; n < loc; n++){
+//			   ret += " ";
+//		   }
+//	   } else if (loc < 60){
+//		   loc -= 49;
+//		   ret += ChatColor.COLOR_CHAR+"6";
+//		   for (int n = 0; n < loc; n++){
+//			   ret += " ";
+//		   }
+//	   }
+//	   return ret;
+//   }
 	
 
 }
