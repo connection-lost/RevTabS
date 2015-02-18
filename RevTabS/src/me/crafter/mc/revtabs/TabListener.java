@@ -26,15 +26,12 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
 public class TabListener implements Listener {
-	
-	private ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
-	
-	private Plugin plugin = Bukkit.getServer().getPluginManager().getPlugin("RevTabS");
+
 	private List<String> playerlist = new ArrayList<String>();
 	private Chat chat;
 
-	private String templateheader = ChatColor.GOLD + "Rev-Craft";
-	private String templatefooter = ChatColor.YELLOW + "@day@" + ChatColor.RESET + " @realname@" + ChatColor.RESET + " Ping: @ping@";
+	private String templateheader = ChatColor.GOLD + "Rev-Craft " + ChatColor.GRAY + "- " + ChatColor.GREEN + "@day@ @time@";
+	private String templatefooter = ChatColor.RESET + " @realname@" + ChatColor.RESET + " Ping: @ping@";
 	
 	public TabListener(Plugin plug){
 		for (Player player : Bukkit.getOnlinePlayers()){
@@ -66,7 +63,7 @@ public class TabListener implements Listener {
 	}
 	
 	public void scheduleUpdate(){
-		Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new Runnable(){
+		Bukkit.getScheduler().scheduleSyncDelayedTask(Bukkit.getServer().getPluginManager().getPlugin("RevTabS"), new Runnable(){
 			public void run(){
 				updateAll();
 			}
@@ -85,19 +82,20 @@ public class TabListener implements Listener {
 
 
 	public void sendHeaderFooter(Player p){
-		PacketContainer pc = this.protocolManager.createPacket(PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER);
+		ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
+		PacketContainer pc = protocolManager.createPacket(PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER);
 	    String[] histab = getHeaderFooter(p);
 	    pc.getChatComponents().write(0, WrappedChatComponent.fromText(histab[0])).write(1, WrappedChatComponent.fromText(histab[1]));
 	    try {
-	    	this.protocolManager.sendServerPacket(p, pc);
+	    	protocolManager.sendServerPacket(p, pc);
 	    } catch (Exception e){}
 	}
 	
 	public String[] getHeaderFooter(Player p){
 		String header = templateheader.replaceAll("@realname@", getPlayerName(p)).replaceAll("@name@", p.getName())
-				.replaceAll("@ping@", getTextPing(p)).replaceAll("@date@", getTime(p)).replaceAll("@realname", getPlayerName(p));
+				.replaceAll("@ping@", getTextPing(p)).replaceAll("@day@", getDay(p)).replaceAll("@time@", getTime(p));
 		String footer = templatefooter.replaceAll("@realname@", getPlayerName(p)).replaceAll("@name@", p.getName())
-				.replaceAll("@ping@", getTextPing(p)).replaceAll("@date@", getTime(p)).replaceAll("@realname", getPlayerName(p));
+				.replaceAll("@ping@", getTextPing(p)).replaceAll("@day@", getDay(p)).replaceAll("@time@", getTime(p));
 		String[] ret = {header,footer};
 		return ret;
 	}
@@ -105,7 +103,7 @@ public class TabListener implements Listener {
 	public String getTextPing(Player p) {
 		int ping = ((CraftPlayer)p).getHandle().ping/2;
 		if (ping == 0){
-			return ChatColor.DARK_PURPLE + "?";
+			return ChatColor.GRAY + "?";
 		} else if (ping <= 60){
 			return ChatColor.GREEN + "" + ping;
 		} else if (ping <= 120){
@@ -125,11 +123,27 @@ public class TabListener implements Listener {
 	}
 
 	public String getTime(Player p){
-		return (ChatColor.YELLOW + String.valueOf(p.getWorld().getTime()/1200) + "·Ö" + String.valueOf(p.getWorld().getTime()/20%60) + "Ãë").replace("9", "¢á");
+		String ret = "";
+		int currtime = ((int)(p.getWorld().getTime()) + 6000) % 24000;
+
+		int hour = currtime/1000;
+		String hours = String.valueOf(hour);
+		if (hour < 10){
+			hours = "0" + hours;
+		}
+		
+		int min = ((currtime % 1000) * 60) / 1000;
+		String mins = String.valueOf(min);
+		if (min < 10){
+			mins = "0" + mins;
+		}
+		
+		ret = hours + ":" + mins;
+		return ret;
 	}
 	
 	public String getDay(Player p){
-		return (ChatColor.YELLOW + String.valueOf(p.getWorld().getFullTime()/24000) + "ÈÕ").replace("9", "¢á");
+		return (ChatColor.YELLOW + String.valueOf(p.getWorld().getFullTime()/24000) + "ÈÕ");
 	}
 	
     private boolean setupChat() {

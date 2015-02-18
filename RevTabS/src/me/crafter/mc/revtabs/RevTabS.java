@@ -30,7 +30,7 @@ public class RevTabS extends JavaPlugin {
 			public void run(){
 				pl.updateAll();
 			}
-		}, 21, 200);
+		}, 21, 17);
         
     }
  
